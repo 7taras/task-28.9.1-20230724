@@ -6,14 +6,17 @@
 
 #include <iostream>
 #include <thread>
+#include <future>
+#include <chrono>
+#include <random>
+
 using namespace std;
 
 
 // Merges two subarrays of array[].
 // First subarray is arr[begin..mid]
 // Second subarray is arr[mid+1..end]
-void merge(int array[], int const left, int const mid,
-    int const right)
+void merge(int array[], int const left, int const mid, int const right)
 {
     int const subArrayOne = mid - left + 1;
     int const subArrayTwo = right - mid;
@@ -32,36 +35,33 @@ void merge(int array[], int const left, int const mid,
     int indexOfMergedArray = left;
 
     // Merge the temp arrays back into array[left..right]
-    while (indexOfSubArrayOne < subArrayOne
-        && indexOfSubArrayTwo < subArrayTwo) {
-        if (leftArray[indexOfSubArrayOne]
-            <= rightArray[indexOfSubArrayTwo]) {
-            array[indexOfMergedArray]
-                = leftArray[indexOfSubArrayOne];
+    while (indexOfSubArrayOne < subArrayOne && indexOfSubArrayTwo < subArrayTwo) 
+    {
+        if (leftArray[indexOfSubArrayOne] <= rightArray[indexOfSubArrayTwo]) 
+        {
+            array[indexOfMergedArray] = leftArray[indexOfSubArrayOne];
             indexOfSubArrayOne++;
         }
-        else {
-            array[indexOfMergedArray]
-                = rightArray[indexOfSubArrayTwo];
+        else 
+        {
+            array[indexOfMergedArray] = rightArray[indexOfSubArrayTwo];
             indexOfSubArrayTwo++;
         }
         indexOfMergedArray++;
     }
 
-    // Copy the remaining elements of
-    // left[], if there are any
-    while (indexOfSubArrayOne < subArrayOne) {
-        array[indexOfMergedArray]
-            = leftArray[indexOfSubArrayOne];
+    // Copy the remaining elements of left[], if there are any
+    while (indexOfSubArrayOne < subArrayOne) 
+    {
+        array[indexOfMergedArray] = leftArray[indexOfSubArrayOne];
         indexOfSubArrayOne++;
         indexOfMergedArray++;
     }
 
-    // Copy the remaining elements of
-    // right[], if there are any
-    while (indexOfSubArrayTwo < subArrayTwo) {
-        array[indexOfMergedArray]
-            = rightArray[indexOfSubArrayTwo];
+    // Copy the remaining elements of right[], if there are any
+    while (indexOfSubArrayTwo < subArrayTwo) 
+    {
+        array[indexOfMergedArray] = rightArray[indexOfSubArrayTwo];
         indexOfSubArrayTwo++;
         indexOfMergedArray++;
     }
@@ -69,20 +69,22 @@ void merge(int array[], int const left, int const mid,
     delete[] rightArray;
 }
 
-// begin is for left index and end is right index
-// of the sub-array of arr to be sorted
+// begin is for left index and end is right index of the sub-array of arr to be sorted
 void mergeSort(int array[], int const begin, int const end)
 {
     if (begin >= end)
         return;
 
     int mid = begin + (end - begin) / 2;
-    mergeSort(array, begin, mid);
+    //mergeSort(array, begin, mid);
+    future<void> fut1 = async(launch::async, [&]() { mergeSort(array, begin, mid); });
     mergeSort(array, mid + 1, end);
+    fut1.get();
+    //future<void> fut2 = async([&]() { mergeSort(array, mid + 1, end); });
     merge(array, begin, mid, end);
+    return;
 }
 
-// UTILITY FUNCTIONS
 // Function to print an array
 void printArray(int A[], int size)
 {
@@ -94,17 +96,31 @@ void printArray(int A[], int size)
 
 int main()
 {
-    int arr[] = { 12, 11, 13, 5, 6, 7 };
-    int arr_size = sizeof(arr) / sizeof(arr[0]);
+    srand(0);
+    long arr_size = 100;
+    int* arr = new int[arr_size];
+    for (long i = 0; i < arr_size; i++) {
+        arr[i] = rand() % 500000;
+    }
+
+    time_t start, end;
+
+    //int arr[] = { 12, 11, 13, 5, 6, 7 };
+    //int arr_size = sizeof(arr) / sizeof(arr[0]);
 
     cout << "Given array is \n";
     printArray(arr, arr_size);
 
     mergeSort(arr, 0, arr_size - 1);
 
+    //future<void> fut = async(launch::async, [&]() {
+    //    mergeSort(arr, 0, arr_size - 1);
+    //    });
+    
+
     cout << "\nSorted array is \n";
     printArray(arr, arr_size);
 
-    unsigned int n = std::thread::hardware_concurrency();
-    std::cout << n << " concurrent threads are supported.\n";
+    //unsigned int n = std::thread::hardware_concurrency();
+    //std::cout << n << " concurrent threads are supported.\n";
 }
