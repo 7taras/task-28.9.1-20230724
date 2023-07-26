@@ -7,13 +7,14 @@
 #include <iostream>
 #include <thread>
 #include <future>
+#include <mutex>
 #include <chrono>
 #include <random>
 
 using namespace std;
 
 unsigned int numberOfConcurrentThreads;
-unsigned int test{ 0 };
+mutex mtx;
 
 // Merges two subarrays of array[].
 // First subarray is arr[begin..mid]
@@ -79,15 +80,18 @@ void mergeSort(int array[], int const begin, int const end)
     
     int mid = begin + (end - begin) / 2;
     
+    mtx.lock();
     if (numberOfConcurrentThreads)
     {
         numberOfConcurrentThreads--;
+        mtx.unlock();
         future<void> fut = async(launch::async, [&]() { mergeSort(array, begin, mid); });
         mergeSort(array, mid + 1, end);
         fut.get();
     }
     else
     {
+        mtx.unlock();
         mergeSort(array, begin, mid);
         mergeSort(array, mid + 1, end);
     }
@@ -137,15 +141,12 @@ int main()
 
     time(&start);
     mergeSort(arr, 0, arr_size - 1);
-    //mergeSortWithoutThreads(arr, 0, arr_size - 1);
     time(&end);
-
-    cout << test << "\n";
+        
     int seconds = difftime(end, start);
     printf("Threads. The time: %d seconds\n", seconds);
 
     time(&start);
-    //mergeSort(arr, 0, arr_size - 1);
     mergeSortWithoutThreads(arr, 0, arr_size - 1);
     time(&end);
 
